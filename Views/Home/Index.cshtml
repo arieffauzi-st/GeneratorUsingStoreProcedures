@@ -1,0 +1,111 @@
+﻿@{
+    ViewData["Title"] = "Data Generator";
+}
+
+<h1>Data Generator</h1>
+
+<button id="generateBtn">Generate</button>
+<button id="resetBtn">Reset</button>
+<button id="submitBtn" disabled>Submit</button>
+
+<table id="dataTable" class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Gender</th>
+            <th>Hobby</th>
+            <th>Age</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const GENDER = {
+            MALE: 1,
+            FEMALE: 2
+        };
+
+        const HOBBIES = ['Sepak Bola', 'Badminton', 'Tenis', 'Renang', 'Bersepeda', 'Tidur'];
+
+        let generatedData = [];
+
+        function generateRandomString(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            return Array.from({length}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        }
+
+        function generateRandomData(index) {
+            let hobbyName = HOBBIES[Math.floor(Math.random() * HOBBIES.length)];
+            if ((index + 1) % 100 === 0) {
+                while (hobbyName.toLowerCase() === 'tidur') {
+                    hobbyName = HOBBIES[Math.floor(Math.random() * HOBBIES.length)];
+                }
+            }
+            return {
+                id: index + 1,
+                name: generateRandomString(8),
+                genderId: Math.random() < 0.5 ? GENDER.MALE : GENDER.FEMALE,
+                genderName: Math.random() < 0.5 ? 'Pria' : 'Wanita',
+                hobbyName: hobbyName,
+                age: Math.floor(Math.random() * (40 - 18 + 1)) + 18
+            };
+        }
+
+        function updateTable() {
+            const tbody = $('#dataTable tbody');
+            tbody.empty();
+            generatedData.forEach(data => {
+                tbody.append(`<tr> <td>${data.id}</td> <td>${data.name}</td> <td>${data.genderName}</td> <td>${data.hobbyName}</td> <td>${data.age}</td> </tr>`);
+            });
+        }
+        $('#generateBtn').click(() => {
+            generatedData = [];
+            for (let i = 0; i < 1000; i++) {
+                generatedData.push(generateRandomData(i));
+            }
+            updateTable();
+            $('#submitBtn').prop('disabled', false);
+        });
+        $('#resetBtn').click(() => {
+            $.post('/Generator/ResetData', function(response) {
+                if (response.success) {
+                    generatedData = [];
+                    updateTable();
+                    $('#submitBtn').prop('disabled', true);
+                    alert(response.message);
+                } else {
+                    alert('Terjadi kesalahan: ' + response.message);
+                }
+            });
+        });
+        $('#submitBtn').click(() => {
+            const submitData = {
+                name: "Arief Fauzi",
+                age: 31,
+                email: "arieffauzi.st@gmail.com",
+                payload: generatedData
+            };
+            $.ajax({
+                url: '/Generator/SubmitData',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(submitData),
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                    } else {
+                        alert('Terjadi kesalahan: ' + response.message);
+                    }
+                },
+                error: function(xhr) {
+                    alert('Terjadi kesalahan: ' + xhr.responseText);
+                }
+            });
+        });
+    </script>
+}
